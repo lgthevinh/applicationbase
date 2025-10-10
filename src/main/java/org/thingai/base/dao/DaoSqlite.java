@@ -57,7 +57,6 @@ public class DaoSqlite extends Dao {
     @Override
     public void initDao(Class[] classes) {
         System.out.println("Initializing SQLite DAO with database at: " + dbPath);
-        setupConnection(dbPath);
 
         for (Class clazz : classes) {
             DaoTable daoTable = (DaoTable) clazz.getAnnotation(DaoTable.class);
@@ -120,6 +119,7 @@ public class DaoSqlite extends Dao {
             System.out.println("Executing query: " + query);
 
             // execute query
+            setupConnection(dbPath);
             try {
                 if (connection != null && !connection.isClosed()) {
                     connection.createStatement().execute(query);
@@ -128,6 +128,8 @@ public class DaoSqlite extends Dao {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                closeConnection();
             }
         }
 
@@ -159,6 +161,7 @@ public class DaoSqlite extends Dao {
 
         query += columns + ") VALUES (" + placeholders + ");";
 
+        setupConnection(dbPath);
         try {
             if (connection != null && !connection.isClosed()) {
                 var preparedStatement = connection.prepareStatement(query);
@@ -179,6 +182,50 @@ public class DaoSqlite extends Dao {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            closeConnection();
+        }
+    }
+
+    @Override
+    public <T> void insertBatch(Class<T> clazz, T[] t) {
+        for (T item : t) {
+            insert(clazz, item);
+        }
+    }
+
+    @Override
+    public <T> void insertOrUpdate(Class<T> clazz, T t) {
+        if (t == null) {
+            throw new IllegalArgumentException("Cannot insert or update null object.");
+        }
+
+        Field[] fields = getAllFields(clazz);
+        Object primaryKeyValue = null;
+        String primaryKeyColumn = null;
+        for (Field field : fields) {
+            DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
+            if (daoColumn != null && daoColumn.primaryKey()) {
+                field.setAccessible(true);
+                try {
+                    primaryKeyValue = field.get(t);
+                    primaryKeyColumn = daoColumn.name().isEmpty() ? field.getName() : daoColumn.name();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+                break;
+            }
+        }
+
+        if (primaryKeyValue == null) {
+            throw new IllegalArgumentException("Cannot insert or update object without primary key value.");
+        }
+
+        T existing = read(clazz, primaryKeyValue);
+        if (existing == null) {
+            insert(clazz, t);
+        } else {
+            update(clazz, primaryKeyValue, t);
         }
     }
 
@@ -189,6 +236,7 @@ public class DaoSqlite extends Dao {
         }
 
         String query = "SELECT * FROM " + clazz.getAnnotation(DaoTable.class).name() + " WHERE id = ?;";
+        setupConnection(dbPath);
         try {
             if (connection != null && !connection.isClosed()) {
                 var preparedStatement = connection.prepareStatement(query);
@@ -211,6 +259,8 @@ public class DaoSqlite extends Dao {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            closeConnection();
         }
         return null; // or throw an exception if not found
     }
@@ -239,6 +289,7 @@ public class DaoSqlite extends Dao {
 
         query += setClause + " WHERE id = ?;";
 
+        setupConnection(dbPath);
         try {
             if (connection != null && !connection.isClosed()) {
                 var preparedStatement = connection.prepareStatement(query);
@@ -258,6 +309,8 @@ public class DaoSqlite extends Dao {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            closeConnection();
         }
     }
 
@@ -268,6 +321,7 @@ public class DaoSqlite extends Dao {
         }
 
         String query = "DELETE FROM " + clazz.getAnnotation(DaoTable.class).name() + " WHERE id = ?;";
+        setupConnection(dbPath);
         try {
             if (connection != null && !connection.isClosed()) {
                 var preparedStatement = connection.prepareStatement(query);
@@ -278,6 +332,8 @@ public class DaoSqlite extends Dao {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            closeConnection();
         }
     }
 
@@ -298,6 +354,7 @@ public class DaoSqlite extends Dao {
         query += whereClause + ";";
 
         List<T> results = new ArrayList<>();
+        setupConnection(dbPath);
         try {
             if (connection != null && !connection.isClosed()) {
                 var preparedStatement = connection.prepareStatement(query);
@@ -326,11 +383,14 @@ public class DaoSqlite extends Dao {
         } catch (Exception e) {
             e.printStackTrace();
             return (T[]) Array.newInstance(clazz, 0);
+        } finally {
+            closeConnection();
         }
     }
 
     @Override
     public <T> T[] query(Class<T> clazz, String query) {
+        setupConnection(dbPath);
         try {
             if (connection != null && !connection.isClosed()) {
                 var preparedStatement = connection.prepareStatement(query);
@@ -356,6 +416,8 @@ public class DaoSqlite extends Dao {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            closeConnection();
         }
         return (T[]) Array.newInstance(clazz, 0);
     }
