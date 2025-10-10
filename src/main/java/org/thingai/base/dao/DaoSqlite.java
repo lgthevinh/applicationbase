@@ -3,36 +3,38 @@ package org.thingai.base.dao;
 import org.thingai.base.dao.annotations.DaoColumn;
 import org.thingai.base.dao.annotations.DaoTable;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class DaoSqlite<T, K> extends Dao<T, K> {
+public class DaoSqlite extends Dao {
     private static Connection connection;
     private static String dbPath;
-    private Class<T> clazz;
-
-    public DaoSqlite(Class<T> clazz) {
-        this.clazz = clazz;
-    }
 
     public DaoSqlite(String dbPath) {
         this.dbPath = dbPath;
     }
 
-    public DaoSqlite(Class<T> clazz, String dbPath) {
-        this.clazz = clazz;
-        this.dbPath = dbPath;
-    }
-
-    private static void setupConnection(String dbPath) {
+    private void setupConnection(String dbPath) {
         try {
             if (connection == null || connection.isClosed()) {
                 Class.forName("org.sqlite.JDBC");
                 connection = java.sql.DriverManager.getConnection("jdbc:sqlite:" + dbPath);
                 System.out.println("SQLite connection established to " + dbPath);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void closeConnection() {
+        try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+                System.out.println("SQLite connection closed.");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -54,6 +56,7 @@ public class DaoSqlite<T, K> extends Dao<T, K> {
 
     @Override
     public void initDao(Class[] classes) {
+        System.out.println("Initializing SQLite DAO with database at: " + dbPath);
         setupConnection(dbPath);
 
         for (Class clazz : classes) {
@@ -131,7 +134,7 @@ public class DaoSqlite<T, K> extends Dao<T, K> {
     }
 
     @Override
-    public void insert(T t) {
+    public <T> void insert(Class<T> clazz, T t) {
         if (t == null) {
             throw new IllegalArgumentException("Cannot insert null object.");
         }
@@ -180,12 +183,12 @@ public class DaoSqlite<T, K> extends Dao<T, K> {
     }
 
     @Override
-    public T read(K id) {
+    public <T, K> T read(Class<T> clazz, K id) {
         if (id == null) {
             throw new IllegalArgumentException("Cannot read null object.");
         }
 
-        String query = "SELECT * FROM " + clazz.getAnnotation(DaoTable.class).name() + " WHERE id = ?";
+        String query = "SELECT * FROM " + clazz.getAnnotation(DaoTable.class).name() + " WHERE id = ?;";
         try {
             if (connection != null && !connection.isClosed()) {
                 var preparedStatement = connection.prepareStatement(query);
@@ -213,53 +216,7 @@ public class DaoSqlite<T, K> extends Dao<T, K> {
     }
 
     @Override
-    public List<T> query(String[] column, String[] value) {
-        if (column == null || value == null) {
-            throw new IllegalArgumentException("Cannot read with null column or value.");
-        }
-
-        String query = "SELECT * FROM " + clazz.getAnnotation(DaoTable.class).name() + " WHERE ";
-        StringBuilder whereClause = new StringBuilder();
-        for (int i = 0; i < column.length; i++) {
-            whereClause.append(column[i]).append(" = ?");
-            if (i < column.length - 1) {
-                whereClause.append(" AND ");
-            }
-        }
-        query += whereClause + ";";
-
-        List<T> results = new ArrayList<>();
-        try {
-            if (connection != null && !connection.isClosed()) {
-                var preparedStatement = connection.prepareStatement(query);
-                for (int i = 0; i < value.length; i++) {
-                    preparedStatement.setObject(i + 1, value[i]);
-                }
-                var resultSet = preparedStatement.executeQuery();
-                while (resultSet.next()) {
-                    T instance = clazz.getDeclaredConstructor().newInstance();
-                    Field[] fields = getAllFields(clazz);
-                    for (Field field : fields) {
-                        DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
-                        if (daoColumn != null) {
-                            field.setAccessible(true);
-                            field.set(instance, resultSet.getObject(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()));
-                        }
-                    }
-                    results.add(instance);
-                }
-                return results;
-            } else {
-                throw new IllegalStateException("Database connection is not established.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null; // or throw an exception if not found
-    }
-
-    @Override
-    public void update(K id, T t) {
+    public <T, K> void update(Class<T> clazz, K id, T t) {
         if (id == null || t == null) {
             throw new IllegalArgumentException("Cannot update with null id or object.");
         }
@@ -305,7 +262,7 @@ public class DaoSqlite<T, K> extends Dao<T, K> {
     }
 
     @Override
-    public void delete(K id) {
+    public <T, K> void delete(Class<T> clazz, K id) {
         if (id == null) {
             throw new IllegalArgumentException("Cannot delete with null id.");
         }
@@ -325,11 +282,28 @@ public class DaoSqlite<T, K> extends Dao<T, K> {
     }
 
     @Override
-    public List<T> query(String query) {
+    public <T> T[] query(Class<T> clazz, String[] column, String[] value) {
+        if (column == null || value == null) {
+            throw new IllegalArgumentException("Cannot read with null column or value.");
+        }
+
+        String query = "SELECT * FROM " + clazz.getAnnotation(DaoTable.class).name() + " WHERE ";
+        StringBuilder whereClause = new StringBuilder();
+        for (int i = 0; i < column.length; i++) {
+            whereClause.append(column[i]).append(" = ?");
+            if (i < column.length - 1) {
+                whereClause.append(" AND ");
+            }
+        }
+        query += whereClause + ";";
+
         List<T> results = new ArrayList<>();
         try {
             if (connection != null && !connection.isClosed()) {
                 var preparedStatement = connection.prepareStatement(query);
+                for (int i = 0; i < value.length; i++) {
+                    preparedStatement.setObject(i + 1, value[i]);
+                }
                 var resultSet = preparedStatement.executeQuery();
                 while (resultSet.next()) {
                     T instance = clazz.getDeclaredConstructor().newInstance();
@@ -343,13 +317,47 @@ public class DaoSqlite<T, K> extends Dao<T, K> {
                     }
                     results.add(instance);
                 }
+
+                T[] array = (T[]) Array.newInstance(clazz, results.size());
+                return results.toArray(array);
+            } else {
+                throw new IllegalStateException("Database connection is not established.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return (T[]) Array.newInstance(clazz, 0);
+        }
+    }
+
+    @Override
+    public <T> T[] query(Class<T> clazz, String query) {
+        try {
+            if (connection != null && !connection.isClosed()) {
+                var preparedStatement = connection.prepareStatement(query);
+                var resultSet = preparedStatement.executeQuery();
+
+                List<T> results = new ArrayList<>();
+                while (resultSet.next()) {
+                    T instance = clazz.getDeclaredConstructor().newInstance();
+                    Field[] fields = getAllFields(clazz);
+                    for (Field field : fields) {
+                        DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
+                        if (daoColumn != null) {
+                            field.setAccessible(true);
+                            field.set(instance, resultSet.getObject(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()));
+                        }
+                    }
+                    results.add(instance);
+                    T[] array = (T[]) Array.newInstance(clazz, results.size());
+                    return results.toArray(array);
+                }
             } else {
                 throw new IllegalStateException("Database connection is not established.");
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return results;
+        return (T[]) Array.newInstance(clazz, 0);
     }
 
 }

@@ -12,7 +12,6 @@ public abstract class Service {
     public static String appDirName;
     public static String configFile;
     public static String logFile;
-    public static String daoType;
 
     protected String appDir;
 
