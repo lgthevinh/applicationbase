@@ -12,6 +12,7 @@ public abstract class Dao {
 
     public abstract void initDao(Class[] classes);
     public abstract <T, K> T read(Class<T> clazz, K id);
+    public abstract <T> T[] readAll(Class<T> clazz);
     public abstract <T> void insert(Class<T> clazz, T t);
     public abstract <T> void insertBatch(Class<T> clazz, T[] t);
     public abstract <T> void insertOrUpdate(Class<T> clazz, T t);

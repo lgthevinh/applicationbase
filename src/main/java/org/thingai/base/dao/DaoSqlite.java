@@ -2,6 +2,7 @@ package org.thingai.base.dao;
 
 import org.thingai.base.dao.annotations.DaoColumn;
 import org.thingai.base.dao.annotations.DaoTable;
+import org.thingai.base.log.ILog;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -263,6 +264,42 @@ public class DaoSqlite extends Dao {
             closeConnection();
         }
         return null; // or throw an exception if not found
+    }
+
+    @Override
+    public <T> T[] readAll(Class<T> clazz) {
+        String query = "SELECT * FROM " + clazz.getAnnotation(DaoTable.class).name() + ";";
+        ILog.d("DaoSqlite", "Executing query: " + query);
+        List<T> results = new ArrayList<>();
+        setupConnection(dbPath);
+        try {
+            if (connection != null && !connection.isClosed()) {
+                var preparedStatement = connection.prepareStatement(query);
+                var resultSet = preparedStatement.executeQuery();
+                while (resultSet.next()) {
+                    T instance = clazz.getDeclaredConstructor().newInstance();
+                    Field[] fields = getAllFields(clazz);
+                    for (Field field : fields) {
+                        DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
+                        if (daoColumn != null) {
+                            field.setAccessible(true);
+                            field.set(instance, resultSet.getObject(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()));
+                        }
+                    }
+                    results.add(instance);
+                }
+
+                T[] array = (T[]) Array.newInstance(clazz, results.size());
+                return results.toArray(array);
+            } else {
+                throw new IllegalStateException("Database connection is not established.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to read all records.");
+        } finally {
+            closeConnection();
+        }
     }
 
     @Override
