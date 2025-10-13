@@ -1,6 +1,6 @@
 package org.thingai.base.dao;
 
-import java.util.List;
+import java.util.Map;
 
 public abstract class Dao {
     public static final String SQLITE = "sqlite";
@@ -20,4 +20,6 @@ public abstract class Dao {
     public abstract <T, K> void delete(Class<T> clazz, K id);
     public abstract <T> T[] query(Class<T> clazz, String[] column, String[] value);
     public abstract <T> T[] query(Class<T> clazz, String query);
+
+    public abstract Map<String, Object>[] queryRaw(String query);
 }

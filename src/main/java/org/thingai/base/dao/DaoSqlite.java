@@ -7,9 +7,7 @@ import org.thingai.base.log.ILog;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class DaoSqlite extends Dao {
     private static Connection connection;
@@ -24,10 +22,10 @@ public class DaoSqlite extends Dao {
             if (connection == null || connection.isClosed()) {
                 Class.forName("org.sqlite.JDBC");
                 connection = java.sql.DriverManager.getConnection("jdbc:sqlite:" + dbPath);
-                System.out.println("SQLite connection established to " + dbPath);
             }
         } catch (Exception e) {
             e.printStackTrace();
+            ILog.e("DaoSqlite", "Failed to connect to database at: " + dbPath);
         }
     }
 
@@ -35,10 +33,10 @@ public class DaoSqlite extends Dao {
         try {
             if (connection != null && !connection.isClosed()) {
                 connection.close();
-                System.out.println("SQLite connection closed.");
             }
         } catch (Exception e) {
             e.printStackTrace();
+            ILog.e("DaoSqlite", "Failed to close database connection.");
         }
     }
 
@@ -459,5 +457,36 @@ public class DaoSqlite extends Dao {
         return (T[]) Array.newInstance(clazz, 0);
     }
 
+    @Override
+    public Map[] queryRaw(String query) {
+        setupConnection(dbPath);
+        try {
+            if (connection != null && !connection.isClosed()) {
+                var preparedStatement = connection.prepareStatement(query);
+                var resultSet = preparedStatement.executeQuery();
+
+                List<Map<String, Object>> results = new ArrayList<>();
+                var metaData = resultSet.getMetaData();
+                int columnCount = metaData.getColumnCount();
+                while (resultSet.next()) {
+                    Map<String, Object> row = new HashMap<>();
+                    for (int i = 1; i <= columnCount; i++) {
+                        String columnName = metaData.getColumnName(i);
+                        Object value = resultSet.getObject(i);
+                        row.put(columnName, value);
+                    }
+                    results.add(row);
+                }
+                return results.toArray(new Map[0]);
+            } else {
+                throw new IllegalStateException("Database connection is not established.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            closeConnection();
+        }
+        return new Map[0];
+    }
 }
 

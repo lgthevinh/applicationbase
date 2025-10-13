@@ -57,6 +57,30 @@ public class LRUCache<K, V> {
         }
     }
 
+    public V remove(K key) {
+        if (!cacheMap.containsKey(key)) {
+            return null;
+        }
+        CacheNode<K, V> node = cacheMap.get(key);
+        removeNode(node);
+        cacheMap.remove(key);
+        return node.value;
+    }
+
+    public boolean containsKey(K key) {
+        return cacheMap.containsKey(key);
+    }
+
+    public int size() {
+        return cacheMap.size();
+    }
+
+    public void clear() {
+        cacheMap.clear();
+        head.next = tail;
+        tail.prev = head;
+    }
+
     private void addToHead(CacheNode<K, V> node) {
         node.prev = head;
         node.next = head.next;
