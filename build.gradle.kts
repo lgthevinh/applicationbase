@@ -14,6 +14,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
 
     implementation("org.xerial:sqlite-jdbc:3.43.2.0")
+    implementation("com.zaxxer:HikariCP:5.1.0")
     implementation("org.slf4j:slf4j-api:2.0.9") // Logging interface of jdbc
 
     implementation("com.fasterxml.jackson.core:jackson-core:2.17.2")
