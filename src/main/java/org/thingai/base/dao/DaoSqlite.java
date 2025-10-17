@@ -332,6 +332,28 @@ public class DaoSqlite extends Dao {
     }
 
     @Override
+    public <T> void deleteAll(Class<T> clazz) {
+        String query = "DELETE FROM " + clazz.getAnnotation(DaoTable.class).name() + ";";
+        try (Connection connection = dataSource.getConnection()) {
+            var preparedStatement = connection.prepareStatement(query);
+            preparedStatement.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public <T> void deleteAll(String tableName) {
+        String query = "DELETE FROM " + tableName + ";";
+        try (Connection connection = dataSource.getConnection()) {
+            var preparedStatement = connection.prepareStatement(query);
+            preparedStatement.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     public <T> T[] query(Class<T> clazz, String[] column, String[] value) {
         if (column == null || value == null) {
             throw new IllegalArgumentException("Cannot read with null column or value.");
