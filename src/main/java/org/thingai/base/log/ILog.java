@@ -1,5 +1,7 @@
 package org.thingai.base.log;
 
+import java.util.Arrays;
+
 public abstract class ILog {
     public static final int DEBUG = 1;
     public static final int INFO = 2;
@@ -11,27 +13,27 @@ public abstract class ILog {
 
     protected static ILog instance;
 
-    public static void d(String tag, String message) {
+    public static void d(String tag, String... message) {
         if (ENABLE_LOGGING && logLevel <= DEBUG) {
-            System.out.println("DEBUG: " + tag + ": " + message);
+            System.out.println("DEBUG: " + tag + ": " + Arrays.toString(message));
         }
     }
 
-    public static void i(String tag, String message) {
+    public static void i(String tag, String... message) {
         if (ENABLE_LOGGING && logLevel <= INFO) {
-            System.out.println("INFO: " + tag + ": " + message);
+            System.out.println("INFO: " + tag + ": " + Arrays.toString(message));
         }
     }
 
-    public static void w(String tag, String message) {
+    public static void w(String tag, String... message) {
         if (ENABLE_LOGGING && logLevel <= WARN) {
-            System.out.println("WARN: " + tag + ": " + message);
+            System.out.println("WARN: " + tag + ": " + Arrays.toString(message));
         }
     }
 
-    public static void e(String tag, String message) {
+    public static void e(String tag, String... message) {
         if (ENABLE_LOGGING && logLevel <= ERROR) {
-            System.err.println("ERROR: " + tag + ": " + message);
+            System.err.println("ERROR: " + tag + ": " + Arrays.toString(message));
         }
     }
 }
