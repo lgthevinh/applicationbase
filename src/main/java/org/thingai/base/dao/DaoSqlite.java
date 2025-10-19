@@ -49,7 +49,7 @@ public class DaoSqlite extends Dao {
 
     @Override
     public void initDao(Class[] classes) {
-        ILog.d(TAG, "Initializing SQLite DAO with database at: " + dbPath);
+        ILog.d(TAG, "Initializing SQLite DAO with database at: ", dbPath);
         for (Class clazz : classes) {
             DaoTable daoTable = (DaoTable) clazz.getAnnotation(DaoTable.class);
             String query = "CREATE TABLE IF NOT EXISTS ";
@@ -108,7 +108,7 @@ public class DaoSqlite extends Dao {
                 query = query.substring(0, query.length() - 2);
             }
             query += ");";
-            System.out.println("Executing query: " + query);
+            ILog.d(TAG, "Executing query: ", query);
 
             // execute query
             try (Connection connection = dataSource.getConnection()) {
@@ -162,7 +162,7 @@ public class DaoSqlite extends Dao {
                     preparedStatement.setObject(index++, value);
                 }
             }
-            System.out.println("Executing query: " + preparedStatement.toString());
+            ILog.d(TAG, "Executing query: ", preparedStatement.toString());
 
             preparedStatement.executeUpdate();
         } catch (Exception e) {
@@ -244,7 +244,7 @@ public class DaoSqlite extends Dao {
     @Override
     public <T> T[] readAll(Class<T> clazz) {
         String query = "SELECT * FROM " + clazz.getAnnotation(DaoTable.class).name() + ";";
-        ILog.d("DaoSqlite", "Executing query: " + query);
+        ILog.d(TAG, "Executing query: " + query);
         List<T> results = new ArrayList<>();
         try (Connection connection = dataSource.getConnection()) {
             var preparedStatement = connection.prepareStatement(query);

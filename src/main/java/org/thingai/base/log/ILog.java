@@ -13,27 +13,31 @@ public abstract class ILog {
 
     protected static ILog instance;
 
-    public static void d(String tag, String... message) {
+    public static void d(String tag, String... object) {
         if (ENABLE_LOGGING && logLevel <= DEBUG) {
-            System.out.println("DEBUG: " + tag + ": " + Arrays.toString(message));
+            String message = String.join(" ", object);
+            System.out.println("DEBUG: " + tag + ": " + message);
         }
     }
 
-    public static void i(String tag, String... message) {
+    public static void i(String tag, String... object) {
         if (ENABLE_LOGGING && logLevel <= INFO) {
-            System.out.println("INFO: " + tag + ": " + Arrays.toString(message));
+            String message = String.join(" ", object);
+            System.out.println("INFO: " + tag + ": " + message);
         }
     }
 
-    public static void w(String tag, String... message) {
+    public static void w(String tag, String... object) {
         if (ENABLE_LOGGING && logLevel <= WARN) {
-            System.out.println("WARN: " + tag + ": " + Arrays.toString(message));
+            String message = String.join(" ", object);
+            System.out.println("WARN: " + tag + ": " + message);
         }
     }
 
-    public static void e(String tag, String... message) {
+    public static void e(String tag, String... object) {
         if (ENABLE_LOGGING && logLevel <= ERROR) {
-            System.err.println("ERROR: " + tag + ": " + Arrays.toString(message));
+            String message = String.join(" ", object);
+            System.err.println("ERROR: " + tag + ": " + message);
         }
     }
 }
