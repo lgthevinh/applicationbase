@@ -1,7 +1,5 @@
 package org.thingai.base.log;
 
-import java.util.Arrays;
-
 public abstract class ILog {
     public static final int DEBUG = 1;
     public static final int INFO = 2;

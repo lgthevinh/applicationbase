@@ -52,11 +52,6 @@ public abstract class Service {
         onServiceInit();
     }
 
-    public void run() {
-        serviceThread = new Thread(this::onServiceRun);
-        serviceThread.start();
-    }
-
     public void shutdown() {
         if (serviceThread != null && serviceThread.isAlive()) {
             serviceThread.interrupt();
@@ -69,5 +64,4 @@ public abstract class Service {
     }
 
     protected abstract void onServiceInit();
-    protected abstract void onServiceRun();
 }
