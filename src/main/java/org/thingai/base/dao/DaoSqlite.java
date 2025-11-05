@@ -97,7 +97,7 @@ public class DaoSqlite extends Dao {
                         query += " AUTOINCREMENT";
                     }
                     if (!daoColumn.defaultValue().isEmpty()) {
-                        query += "DEFAULT " + daoColumn.defaultValue() + " ";
+                        query += " DEFAULT " + daoColumn.defaultValue() + " ";
                     }
                 }
                 query += ", ";
