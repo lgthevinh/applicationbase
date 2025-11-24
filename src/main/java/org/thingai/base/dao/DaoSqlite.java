@@ -332,6 +332,53 @@ public class DaoSqlite extends Dao {
     }
 
     @Override
+    public <T> void delete(T t) {
+        String query = "DELETE FROM " + t.getClass().getAnnotation(DaoTable.class).name();
+        String whereClause = " WHERE ";
+        Field[] fields = getAllFields(t.getClass());
+        List<Object> values = new ArrayList<>();
+        for (Field field : fields) {
+            DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
+            if (daoColumn != null && daoColumn.primaryKey()) {
+                whereClause += (daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()) + " = ? AND ";
+                field.setAccessible(true);
+                try {
+                    values.add(field.get(t));
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+        // Remove trailing " AND "
+        if (whereClause.endsWith(" AND ")) {
+            whereClause = whereClause.substring(0, whereClause.length() - 5);
+        }
+        query += whereClause + ";";
+        try (Connection connection = dataSource.getConnection()) {
+            var preparedStatement = connection.prepareStatement(query);
+            for (int i = 0; i < values.size(); i++) {
+                preparedStatement.setObject(i + 1, values.get(i));
+            }
+            preparedStatement.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public <T> void deleteByColumn(Class<T> clazz, String column, String value) {
+        String query = "DELETE FROM " + clazz.getAnnotation(DaoTable.class).name() + " WHERE " + column + " = ?;";
+        try (Connection connection = dataSource.getConnection()) {
+            var preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setObject(1, value);
+            preparedStatement.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
     public <T> void deleteAll(Class<T> clazz) {
         String query = "DELETE FROM " + clazz.getAnnotation(DaoTable.class).name() + ";";
         try (Connection connection = dataSource.getConnection()) {

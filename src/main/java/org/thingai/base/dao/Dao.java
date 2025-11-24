@@ -18,6 +18,8 @@ public abstract class Dao {
     public abstract <T> void insertOrUpdate(Class<T> clazz, T t);
     public abstract <T, K> void update(Class<T> clazz, K id, T t);
     public abstract <T, K> void delete(Class<T> clazz, K id);
+    public abstract <T> void delete(T t);
+    public abstract <T> void deleteByColumn(Class<T> clazz, String column, String value);
     public abstract <T> void deleteAll(Class<T> clazz);
     public abstract <T> void deleteAll(String tableName);
     public abstract <T> T[] query(Class<T> clazz, String[] column, String[] value);
