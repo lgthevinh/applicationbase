@@ -7,11 +7,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public abstract class Service {
-    public static String name;
-    public static String version;
-    public static String appDirName;
-    public static String configFile;
-    public static String logFile;
+    public String name;
+    public String version;
+    public String appDirName;
+    public String configFile;
+    public String logFile;
 
     protected String appDir;
 
@@ -24,7 +24,7 @@ public abstract class Service {
     public void init() {
         // Default values for the application properties
         version = version != null ? version : "1.0.0";
-        appDirName = appDirName != null ? appDirName : "default_app";
+        appDirName = appDirName != null ? appDirName : name;
         configFile = configFile != null ? configFile : "config.properties";
         logFile = logFile != null ? logFile : "application.log";
 
