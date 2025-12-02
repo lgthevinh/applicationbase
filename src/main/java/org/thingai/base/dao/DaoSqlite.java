@@ -282,6 +282,39 @@ public class DaoSqlite extends Dao {
     }
 
     @Override
+    public <T> T[] query(Class<T> clazz, String column, String value) {
+        if (column == null || value == null) {
+            throw new IllegalArgumentException("Cannot read with null column or value.");
+        }
+
+        String query = "SELECT * FROM " + clazz.getAnnotation(DaoTable.class).name() + " WHERE " + column + " = ?;";
+        List<T> results = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection()) {
+            var preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setObject(1, value);
+            var resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                T instance = clazz.getDeclaredConstructor().newInstance();
+                Field[] fields = getAllFields(clazz);
+                for (Field field : fields) {
+                    DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
+                    if (daoColumn != null) {
+                        field.setAccessible(true);
+                        field.set(instance, resultSet.getObject(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()));
+                    }
+                }
+                results.add(instance);
+            }
+
+            T[] array = (T[]) Array.newInstance(clazz, results.size());
+            return results.toArray(array);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return (T[]) Array.newInstance(clazz, 0);
+        }
+    }
+
+    @Override
     public <T> T[] query(Class<T> clazz, String[] column, String[] value) {
         if (column == null || value == null) {
             throw new IllegalArgumentException("Cannot read with null column or value.");
