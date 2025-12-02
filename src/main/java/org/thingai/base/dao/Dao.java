@@ -13,6 +13,7 @@ public abstract class Dao {
     public abstract void initDao(Class[] classes);
     public abstract <T> T[] readAll(Class<T> clazz);
     public abstract <T> void insertOrUpdate(T t);
+    public abstract <T> void insertOrUpdate(Class<T> clazz, T t);
     public abstract <T> void insertBatch(T[] t);
     public abstract <T, K> void delete(Class<T> clazz, K id);
     public abstract <T> void delete(T t);

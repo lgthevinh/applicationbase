@@ -131,7 +131,52 @@ public class DaoSqlite extends Dao {
         if (t == null) {
             throw new IllegalArgumentException("Cannot insert null object.");
         }
-        String query = "INSERT OR UPDATE INTO " + clazz.getAnnotation(DaoTable.class).name() + " (";
+        String query = "INSERT OR REPLACE INTO " + clazz.getAnnotation(DaoTable.class).name() + " (";
+        StringBuilder columns = new StringBuilder();
+        StringBuilder placeholders = new StringBuilder();
+
+        Field[] fields = getAllFields(clazz);
+        for (Field field : fields) {
+            DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
+            if (daoColumn != null) {
+                columns.append(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()).append(", ");
+                placeholders.append("?, ");
+            }
+        }
+
+        // Remove trailing comma and space
+        if (columns.length() > 0) {
+            columns.setLength(columns.length() - 2);
+            placeholders.setLength(placeholders.length() - 2);
+        }
+
+        query += columns + ") VALUES (" + placeholders + ");";
+
+        try (Connection connection = dataSource.getConnection()) {
+            var preparedStatement = connection.prepareStatement(query);
+            int index = 1;
+            for (Field field : fields) {
+                DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
+                if (daoColumn != null) {
+                    field.setAccessible(true);
+                    Object value = field.get(t);
+                    preparedStatement.setObject(index++, value);
+                }
+            }
+            ILog.d(TAG, "Executing query: ", preparedStatement.toString());
+
+            preparedStatement.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public <T> void insertOrUpdate(Class<T> clazz, T t) {
+        if (t == null) {
+            throw new IllegalArgumentException("Cannot insert null object.");
+        }
+        String query = "INSERT OR REPLACE INTO " + clazz.getAnnotation(DaoTable.class).name() + " (";
         StringBuilder columns = new StringBuilder();
         StringBuilder placeholders = new StringBuilder();
 
