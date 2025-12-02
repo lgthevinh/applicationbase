@@ -11,17 +11,13 @@ public abstract class Dao {
     public static final String FILE = "file";
 
     public abstract void initDao(Class[] classes);
-    public abstract <T, K> T read(Class<T> clazz, K id);
     public abstract <T> T[] readAll(Class<T> clazz);
-    public abstract <T> void insert(Class<T> clazz, T t);
-    public abstract <T> void insertBatch(Class<T> clazz, T[] t);
-    public abstract <T> void insertOrUpdate(Class<T> clazz, T t);
-    public abstract <T, K> void update(Class<T> clazz, K id, T t);
+    public abstract <T> void insertOrUpdate(T t);
+    public abstract <T> void insertBatch(T[] t);
     public abstract <T, K> void delete(Class<T> clazz, K id);
     public abstract <T> void delete(T t);
     public abstract <T> void deleteByColumn(Class<T> clazz, String column, String value);
     public abstract <T> void deleteAll(Class<T> clazz);
-    public abstract <T> void deleteAll(String tableName);
     public abstract <T> T[] query(Class<T> clazz, String[] column, String[] value);
     public abstract <T> T[] query(Class<T> clazz, String query);
 

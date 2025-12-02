@@ -126,11 +126,12 @@ public class DaoSqlite extends Dao {
     }
 
     @Override
-    public <T> void insert(Class<T> clazz, T t) {
+    public <T> void insertOrUpdate(T t) {
+        Class<?> clazz = t.getClass();
         if (t == null) {
             throw new IllegalArgumentException("Cannot insert null object.");
         }
-        String query = "INSERT INTO " + clazz.getAnnotation(DaoTable.class).name() + " (";
+        String query = "INSERT OR UPDATE INTO " + clazz.getAnnotation(DaoTable.class).name() + " (";
         StringBuilder columns = new StringBuilder();
         StringBuilder placeholders = new StringBuilder();
 
@@ -171,74 +172,10 @@ public class DaoSqlite extends Dao {
     }
 
     @Override
-    public <T> void insertBatch(Class<T> clazz, T[] t) {
+    public <T> void insertBatch(T[] t) {
         for (T item : t) {
-            insert(clazz, item);
+            insertOrUpdate(item);
         }
-    }
-
-    @Override
-    public <T> void insertOrUpdate(Class<T> clazz, T t) {
-        if (t == null) {
-            throw new IllegalArgumentException("Cannot insert or update null object.");
-        }
-
-        Field[] fields = getAllFields(clazz);
-        Object primaryKeyValue = null;
-        String primaryKeyColumn = null;
-        for (Field field : fields) {
-            DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
-            if (daoColumn != null && daoColumn.primaryKey()) {
-                field.setAccessible(true);
-                try {
-                    primaryKeyValue = field.get(t);
-                    primaryKeyColumn = daoColumn.name().isEmpty() ? field.getName() : daoColumn.name();
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-                break;
-            }
-        }
-
-        if (primaryKeyValue == null) {
-            throw new IllegalArgumentException("Cannot insert or update object without primary key value.");
-        }
-
-        T existing = read(clazz, primaryKeyValue);
-        if (existing == null) {
-            insert(clazz, t);
-        } else {
-            update(clazz, primaryKeyValue, t);
-        }
-    }
-
-    @Override
-    public <T, K> T read(Class<T> clazz, K id) {
-        if (id == null) {
-            throw new IllegalArgumentException("Cannot read null object.");
-        }
-
-        String query = "SELECT * FROM " + clazz.getAnnotation(DaoTable.class).name() + " WHERE id = ?;";
-        try (Connection connection = dataSource.getConnection()) {
-            var preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setObject(1, id);
-            var resultSet = preparedStatement.executeQuery();
-            if (resultSet.next()) {
-                T instance = clazz.getDeclaredConstructor().newInstance();
-                Field[] fields = getAllFields(clazz);
-                for (Field field : fields) {
-                    DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
-                    if (daoColumn != null) {
-                        field.setAccessible(true);
-                        field.set(instance, resultSet.getObject(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()));
-                    }
-                }
-                return instance;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null; // or throw an exception if not found
     }
 
     @Override
@@ -267,51 +204,6 @@ public class DaoSqlite extends Dao {
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Failed to read all records.");
-        }
-    }
-
-    @Override
-    public <T, K> void update(Class<T> clazz, K id, T t) {
-        if (id == null || t == null) {
-            throw new IllegalArgumentException("Cannot update with null id or object.");
-        }
-
-        String query = "UPDATE " + clazz.getAnnotation(DaoTable.class).name() + " SET ";
-        StringBuilder setClause = new StringBuilder();
-
-        Field[] fields = getAllFields(clazz);
-        for (Field field : fields) {
-            DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
-            if (daoColumn != null && !daoColumn.primaryKey()) {
-                setClause.append(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()).append(" = ?, ");
-            }
-        }
-
-        // Remove trailing comma and space
-        if (setClause.length() > 0) {
-            setClause.setLength(setClause.length() - 2);
-        }
-
-        query += setClause + " WHERE id = ?;";
-        try (Connection connection = dataSource.getConnection()) {
-            if (connection != null && !connection.isClosed()) {
-                var preparedStatement = connection.prepareStatement(query);
-                int index = 1;
-                for (Field field : fields) {
-                    DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
-                    if (daoColumn != null && !daoColumn.primaryKey()) {
-                        field.setAccessible(true);
-                        Object value = field.get(t);
-                        preparedStatement.setObject(index++, value);
-                    }
-                }
-                preparedStatement.setObject(index, id); // set the id at the end
-                preparedStatement.executeUpdate();
-            } else {
-                throw new IllegalStateException("Database connection is not established.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
@@ -381,17 +273,6 @@ public class DaoSqlite extends Dao {
     @Override
     public <T> void deleteAll(Class<T> clazz) {
         String query = "DELETE FROM " + clazz.getAnnotation(DaoTable.class).name() + ";";
-        try (Connection connection = dataSource.getConnection()) {
-            var preparedStatement = connection.prepareStatement(query);
-            preparedStatement.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public <T> void deleteAll(String tableName) {
-        String query = "DELETE FROM " + tableName + ";";
         try (Connection connection = dataSource.getConnection()) {
             var preparedStatement = connection.prepareStatement(query);
             preparedStatement.executeUpdate();
