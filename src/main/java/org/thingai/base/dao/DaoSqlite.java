@@ -11,7 +11,7 @@ import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.util.*;
 
-public class DaoSqlite extends Dao {
+public class DaoSqlite implements Dao {
     private static final String TAG = "DaoSqlite";
     private final HikariDataSource dataSource;
     private final String dbPath;
@@ -34,7 +34,7 @@ public class DaoSqlite extends Dao {
         }
     }
 
-    private static Field[] getAllFields(Class clazz) {
+    protected static Field[] getAllFields(Class clazz) {
         List<Field> fields = new ArrayList<>();
         while (clazz != null) {
             fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
