@@ -159,6 +159,11 @@ public class DaoSqlite implements Dao {
                 DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
                 if (daoColumn != null) {
                     field.setAccessible(true);
+                    if (field.getType() == boolean.class || field.getType() == Boolean.class) {
+                        Boolean boolValue = (Boolean) field.get(t);
+                        preparedStatement.setObject(index++, boolValue != null && boolValue ? 1 : 0);
+                        continue;
+                    }
                     Object value = field.get(t);
                     preparedStatement.setObject(index++, value);
                 }
@@ -238,6 +243,11 @@ public class DaoSqlite implements Dao {
                     DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
                     if (daoColumn != null) {
                         field.setAccessible(true);
+                        if (field.getType() == boolean.class || field.getType() == Boolean.class) {
+                            int intValue = resultSet.getInt(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name());
+                            field.set(instance, intValue != 0);
+                            continue;
+                        }
                         field.set(instance, resultSet.getObject(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()));
                     }
                 }
@@ -345,6 +355,11 @@ public class DaoSqlite implements Dao {
                     DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
                     if (daoColumn != null) {
                         field.setAccessible(true);
+                        if (field.getType() == boolean.class || field.getType() == Boolean.class) {
+                            int intValue = resultSet.getInt(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name());
+                            field.set(instance, intValue != 0);
+                            continue;
+                        }
                         field.set(instance, resultSet.getObject(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()));
                     }
                 }
@@ -389,6 +404,11 @@ public class DaoSqlite implements Dao {
                     DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
                     if (daoColumn != null) {
                         field.setAccessible(true);
+                        if (field.getType() == boolean.class || field.getType() == Boolean.class) {
+                            int intValue = resultSet.getInt(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name());
+                            field.set(instance, intValue != 0);
+                            continue;
+                        }
                         field.set(instance, resultSet.getObject(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()));
                     }
                 }
@@ -417,6 +437,11 @@ public class DaoSqlite implements Dao {
                     DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
                     if (daoColumn != null) {
                         field.setAccessible(true);
+                        if (field.getType() == boolean.class || field.getType() == Boolean.class) {
+                            int intValue = resultSet.getInt(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name());
+                            field.set(instance, intValue != 0);
+                            continue;
+                        }
                         field.set(instance, resultSet.getObject(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()));
                     }
                 }
