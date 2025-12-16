@@ -9,6 +9,7 @@ import org.thingai.base.log.ILog;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.util.*;
 
 public class DaoSqlite implements Dao {
@@ -349,20 +350,7 @@ public class DaoSqlite implements Dao {
             preparedStatement.setObject(1, value);
             var resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
-                T instance = clazz.getDeclaredConstructor().newInstance();
-                Field[] fields = getAllFields(clazz);
-                for (Field field : fields) {
-                    DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
-                    if (daoColumn != null) {
-                        field.setAccessible(true);
-                        if (field.getType() == boolean.class || field.getType() == Boolean.class) {
-                            int intValue = resultSet.getInt(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name());
-                            field.set(instance, intValue != 0);
-                            continue;
-                        }
-                        field.set(instance, resultSet.getObject(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()));
-                    }
-                }
+                T instance = fromResultSet(clazz, resultSet);
                 results.add(instance);
             }
 
@@ -398,20 +386,7 @@ public class DaoSqlite implements Dao {
             }
             var resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
-                T instance = clazz.getDeclaredConstructor().newInstance();
-                Field[] fields = getAllFields(clazz);
-                for (Field field : fields) {
-                    DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
-                    if (daoColumn != null) {
-                        field.setAccessible(true);
-                        if (field.getType() == boolean.class || field.getType() == Boolean.class) {
-                            int intValue = resultSet.getInt(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name());
-                            field.set(instance, intValue != 0);
-                            continue;
-                        }
-                        field.set(instance, resultSet.getObject(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()));
-                    }
-                }
+                T instance = fromResultSet(clazz, resultSet);
                 results.add(instance);
             }
 
@@ -431,24 +406,11 @@ public class DaoSqlite implements Dao {
 
             List<T> results = new ArrayList<>();
             while (resultSet.next()) {
-                T instance = clazz.getDeclaredConstructor().newInstance();
-                Field[] fields = getAllFields(clazz);
-                for (Field field : fields) {
-                    DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
-                    if (daoColumn != null) {
-                        field.setAccessible(true);
-                        if (field.getType() == boolean.class || field.getType() == Boolean.class) {
-                            int intValue = resultSet.getInt(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name());
-                            field.set(instance, intValue != 0);
-                            continue;
-                        }
-                        field.set(instance, resultSet.getObject(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()));
-                    }
-                }
+                T instance = fromResultSet(clazz, resultSet);
                 results.add(instance);
-                T[] array = (T[]) Array.newInstance(clazz, results.size());
-                return results.toArray(array);
             }
+            T[] array = (T[]) Array.newInstance(clazz, results.size());
+            return results.toArray(array);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -478,6 +440,24 @@ public class DaoSqlite implements Dao {
             e.printStackTrace();
         }
         return new Map[0];
+    }
+
+    private <T> T fromResultSet(Class<T> clazz, ResultSet resultSet) throws Exception {
+        T instance = clazz.getDeclaredConstructor().newInstance();
+        Field[] fields = getAllFields(clazz);
+        for (Field field : fields) {
+            DaoColumn daoColumn = field.getAnnotation(DaoColumn.class);
+            if (daoColumn != null) {
+                field.setAccessible(true);
+                if (field.getType() == boolean.class || field.getType() == Boolean.class) {
+                    int intValue = resultSet.getInt(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name());
+                    field.set(instance, intValue != 0);
+                    continue;
+                }
+                field.set(instance, resultSet.getObject(daoColumn.name().isEmpty() ? field.getName() : daoColumn.name()));
+            }
+        }
+        return instance;
     }
 }
 
