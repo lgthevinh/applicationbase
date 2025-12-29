@@ -1,4 +1,4 @@
-package org.thingai.base.dao;
+package org.thingai.platform.dao;
 
 import java.io.*;
 import java.nio.file.Files;

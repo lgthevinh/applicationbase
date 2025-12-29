@@ -1,7 +1,8 @@
-package org.thingai.base.dao;
+package org.thingai.platform.dao;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.thingai.base.dao.Dao;
 import org.thingai.base.dao.annotations.DaoColumn;
 import org.thingai.base.dao.annotations.DaoTable;
 import org.thingai.base.log.ILog;
