@@ -1,7 +1,5 @@
 package org.thingai.base;
 
-import org.thingai.base.dao.Dao;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
